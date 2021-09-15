@@ -5271,6 +5271,11 @@ react-native-codegen@^0.0.7:
     jscodeshift "^0.11.0"
     nullthrows "^1.1.1"
 
+react-native-compass-heading@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/react-native-compass-heading/-/react-native-compass-heading-1.2.1.tgz#911bc6096f58be8ef9e48f9f59c56bd9b78d03e6"
+  integrity sha512-Xvzb43w0A1FyA7PEOgowwUX1Jy+5dmQ7K/+L/NKGPlgwR6ttbWFgIlzZg7VfR0awmbpjVmO79m9tkPOPZGIdNg==
+
 react-native@0.65.1:
   version "0.65.1"
   resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.65.1.tgz#bd8cd313e0eb8ddcf08e61e3f8b54b7fc31a418c"
