@@ -8,23 +8,67 @@
  * @format
  */
 
+import {Buffer} from 'buffer';
 import React, {useEffect, useState} from 'react';
 import {
+  Button,
+  Image,
+  PermissionsAndroid,
   SafeAreaView,
   StyleSheet,
-  Image,
+  Switch,
   Text,
   useColorScheme,
   View,
 } from 'react-native';
-
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-
 import CompassHeading from 'react-native-compass-heading';
+import {BleManager} from 'react-native-ble-plx';
+
+type Motor = 'Left' | 'Hold' | 'Right';
+
+const Relay1On = Buffer.from([0xa0, 0x01, 0x01, 0xa2]);
+const Relay1Off = Buffer.from([0xa0, 0x01, 0x00, 0xa1]);
+const Relay2On = Buffer.from([0xa0, 0x02, 0x01, 0xa3]);
+const Relay2Off = Buffer.from([0xa0, 0x02, 0x00, 0xa2]);
+
+let bleManager: BleManager | undefined;
 
 const App = () => {
-  const isDarkMode = useColorScheme() === 'dark';
+  const isDarkMode = false; // useColorScheme() === 'dark';
   const [compassHeading, setCompassHeading] = useState(0);
+  const [motor, setMotor] = useState('Hold');
+  const [deviceId, setDeviceId] = useState(undefined as string | undefined);
+  const [isScanning, setIsScanning] = useState(false);
+
+  const write = async (command: Buffer) => {
+    console.log(!!bleManager, deviceId);
+    if (bleManager && deviceId) {
+      console.log(`write ${command.toString('hex')}`);
+      await bleManager.writeCharacteristicWithoutResponseForDevice(
+        deviceId,
+        '0000ffe0-0000-1000-8000-00805f9b34fb',
+        '0000ffe1-0000-1000-8000-00805f9b34fb',
+        command.toString('base64'),
+      );
+    }
+  };
+
+  const onLeft = async () => {
+    setMotor('Left');
+    await write(Relay1On);
+    await write(Relay2Off);
+  };
+  const onHold = async () => {
+    setMotor('Hold');
+    await write(Relay1Off);
+    await write(Relay2Off);
+  };
+  const onRight = async () => {
+    setMotor('Right');
+    await write(Relay1Off);
+    await write(Relay2On);
+  };
 
   useEffect(() => {
     const degree_update_rate = 3;
@@ -41,6 +85,36 @@ const App = () => {
       CompassHeading.stop();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isScanning) {
+      setIsScanning(true);
+      PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      ).then(permissionResult => {
+        if (permissionResult === PermissionsAndroid.RESULTS.GRANTED) {
+          bleManager = new BleManager();
+          bleManager.startDeviceScan(null, null, (error, device) => {
+            if (bleManager && device && device.localName === 'DSD Relay') {
+              bleManager.stopDeviceScan();
+              console.log('Scan completed');
+              bleManager.connectToDevice(device.id).then(() => {
+                console.log('Connected');
+                if (bleManager) {
+                  bleManager
+                    .discoverAllServicesAndCharacteristicsForDevice(device.id)
+                    .then(() => {
+                      console.log('Services and characteristics discovered');
+                      setDeviceId(device.id);
+                    });
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  }, [isScanning, setDeviceId, setIsScanning]);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -59,6 +133,8 @@ const App = () => {
             ]}>
             SteadyNav Demo
           </Text>
+        </View>
+        <View style={styles.sectionContainer}>
           <Text
             style={[
               styles.sectionDescription,
@@ -66,12 +142,34 @@ const App = () => {
                 color: isDarkMode ? Colors.light : Colors.dark,
               },
             ]}>
-            some text
+            {`Aktuel kurs: ${compassHeading}°`}
           </Text>
+          <Text
+            style={[
+              styles.sectionDescription,
+              {
+                color: isDarkMode ? Colors.light : Colors.dark,
+              },
+            ]}>
+            {`Relæ: ${deviceId ? 'Forbundet' : '...forbinder...'}`}
+          </Text>
+          <Text
+            style={[
+              styles.sectionDescription,
+              {
+                color: isDarkMode ? Colors.light : Colors.dark,
+              },
+            ]}>
+            Manuel: Bagbord | Hold | Styrbord
+          </Text>
+          <Switch value={motor === 'Left'} onChange={onLeft} />
+          <Switch value={motor === 'Hold'} onChange={onHold} />
+          <Switch value={motor === 'Right'} onChange={onRight} />
         </View>
       </SafeAreaView>
       <Image
         style={[
+          backgroundStyle,
           styles.compass,
           {transform: [{rotate: `${360 - compassHeading}deg`}]},
         ]}
@@ -97,7 +195,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   compass: {
-    width: '90%',
+    width: '100%',
     flex: 1,
     alignSelf: 'center',
   },
