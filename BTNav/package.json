@@ -1,5 +1,5 @@
 {
-  "name": "BTNav",
+  "name": "btnav",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -14,11 +14,16 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {
+    "@types/ramda": "^0.27.44",
     "buffer": "^6.0.3",
+    "ramda": "^0.27.1",
     "react": "17.0.2",
     "react-native": "0.65.1",
     "react-native-ble-plx": "^2.0.2",
-    "react-native-compass-heading": "^1.2.1"
+    "react-native-compass-heading": "^1.2.1",
+    "react-redux": "^7.2.5",
+    "redux": "^4.1.1",
+    "redux-thunk": "^2.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
@@ -33,7 +38,7 @@
     "metro-react-native-babel-preset": "^0.66.0",
     "react-native-codegen": "^0.0.7",
     "react-test-renderer": "17.0.2",
-    "typescript": "^3.8.3"
+    "typescript": "4"
   },
   "resolutions": {
     "@types/react": "^17"

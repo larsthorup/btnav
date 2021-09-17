@@ -9,7 +9,7 @@
  */
 
 import {Buffer} from 'buffer';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect} from 'react';
 import {
   Button,
   Image,
@@ -24,8 +24,10 @@ import {
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import CompassHeading from 'react-native-compass-heading';
 import {BleManager} from 'react-native-ble-plx';
-
-type Motor = 'Left' | 'Hold' | 'Right';
+import {useDispatch, useSelector} from '../state';
+import relay from '../state/relay';
+import rudder from '../state/rudder';
+import compass from '../state/compass';
 
 const Relay1On = Buffer.from([0xa0, 0x01, 0x01, 0xa2]);
 const Relay1Off = Buffer.from([0xa0, 0x01, 0x00, 0xa1]);
@@ -34,12 +36,13 @@ const Relay2Off = Buffer.from([0xa0, 0x02, 0x00, 0xa2]);
 
 let bleManager: BleManager | undefined;
 
-const App = () => {
+const NavScreen = () => {
+  const dispatch = useDispatch();
   const isDarkMode = false; // useColorScheme() === 'dark';
-  const [compassHeading, setCompassHeading] = useState(0);
-  const [motor, setMotor] = useState('Hold');
-  const [deviceId, setDeviceId] = useState(undefined as string | undefined);
-  const [isScanning, setIsScanning] = useState(false);
+  const heading = useSelector(state => state.compass.heading);
+  const motorDirection = useSelector(state => state.rudder.motorDirection);
+  const {deviceId, isConnecting, isDiscovering, isReady, isScanning} =
+    useSelector(state => state.relay);
 
   const write = async (command: Buffer) => {
     console.log(!!bleManager, deviceId);
@@ -55,30 +58,29 @@ const App = () => {
   };
 
   const onLeft = async () => {
-    setMotor('Left');
+    dispatch(rudder.actions.motor('Left'));
     await write(Relay1On);
     await write(Relay2Off);
   };
   const onHold = async () => {
-    setMotor('Hold');
+    dispatch(rudder.actions.motor('Hold'));
     await write(Relay1Off);
     await write(Relay2Off);
   };
   const onRight = async () => {
-    setMotor('Right');
+    dispatch(rudder.actions.motor('Right'));
     await write(Relay1Off);
     await write(Relay2On);
   };
 
   useEffect(() => {
-    const degree_update_rate = 3;
+    const degree_update_rate = 1;
 
     // accuracy on android will be hardcoded to 1
     // since the value is not available.
     // For iOS, it is in degrees
     CompassHeading.start(degree_update_rate, ({heading, accuracy}) => {
-      console.log({heading});
-      setCompassHeading(heading);
+      dispatch(compass.actions.heading(heading));
     });
 
     return () => {
@@ -87,25 +89,24 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (!isScanning) {
-      setIsScanning(true);
+    if (!(isScanning || isConnecting || isDiscovering || isReady)) {
       PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       ).then(permissionResult => {
         if (permissionResult === PermissionsAndroid.RESULTS.GRANTED) {
           bleManager = new BleManager();
+          dispatch(relay.actions.scanning());
           bleManager.startDeviceScan(null, null, (error, device) => {
             if (bleManager && device && device.localName === 'DSD Relay') {
               bleManager.stopDeviceScan();
-              console.log('Scan completed');
+              dispatch(relay.actions.connecting());
               bleManager.connectToDevice(device.id).then(() => {
-                console.log('Connected');
                 if (bleManager) {
+                  dispatch(relay.actions.discovering());
                   bleManager
                     .discoverAllServicesAndCharacteristicsForDevice(device.id)
                     .then(() => {
-                      console.log('Services and characteristics discovered');
-                      setDeviceId(device.id);
+                      dispatch(relay.actions.ready({deviceId: device.id}));
                     });
                 }
               });
@@ -114,11 +115,21 @@ const App = () => {
         }
       });
     }
-  }, [isScanning, setDeviceId, setIsScanning]);
+  }, [isConnecting, isDiscovering, isReady, isScanning]);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
+
+  const relayStatus = isReady
+    ? 'Forbundet'
+    : isScanning
+    ? '...søger...'
+    : isConnecting
+    ? '...forbinder...'
+    : isDiscovering
+    ? '...kontrollerer...'
+    : '';
 
   return (
     <>
@@ -142,7 +153,7 @@ const App = () => {
                 color: isDarkMode ? Colors.light : Colors.dark,
               },
             ]}>
-            {`Aktuel kurs: ${compassHeading}°`}
+            {`Aktuel kurs: ${heading}°`}
           </Text>
           <Text
             style={[
@@ -151,7 +162,7 @@ const App = () => {
                 color: isDarkMode ? Colors.light : Colors.dark,
               },
             ]}>
-            {`Relæ: ${deviceId ? 'Forbundet' : '...forbinder...'}`}
+            {`Relæ: ${relayStatus}`}
           </Text>
           <Text
             style={[
@@ -162,19 +173,19 @@ const App = () => {
             ]}>
             Manuel: Bagbord | Hold | Styrbord
           </Text>
-          <Switch value={motor === 'Left'} onChange={onLeft} />
-          <Switch value={motor === 'Hold'} onChange={onHold} />
-          <Switch value={motor === 'Right'} onChange={onRight} />
+          <Switch value={motorDirection === 'Left'} onChange={onLeft} />
+          <Switch value={motorDirection === 'Hold'} onChange={onHold} />
+          <Switch value={motorDirection === 'Right'} onChange={onRight} />
         </View>
       </SafeAreaView>
       <Image
         style={[
           backgroundStyle,
           styles.compass,
-          {transform: [{rotate: `${360 - compassHeading}deg`}]},
+          {transform: [{rotate: `${360 - heading}deg`}]},
         ]}
         resizeMode="contain"
-        source={require('./compass.png')}
+        source={require('../media/compass.png')}
       />
     </>
   );
@@ -201,4 +212,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default NavScreen;
