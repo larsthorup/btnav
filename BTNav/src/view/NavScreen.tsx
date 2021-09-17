@@ -8,7 +8,6 @@
  * @format
  */
 
-import {Buffer} from 'buffer';
 import React, {useEffect} from 'react';
 import {
   Button,
@@ -22,19 +21,14 @@ import {
   View,
 } from 'react-native';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import CompassHeading from 'react-native-compass-heading';
-import {BleManager} from 'react-native-ble-plx';
+
 import {useDispatch, useSelector} from '../state';
 import relay from '../state/relay';
 import rudder from '../state/rudder';
 import compass from '../state/compass';
-
-const Relay1On = Buffer.from([0xa0, 0x01, 0x01, 0xa2]);
-const Relay1Off = Buffer.from([0xa0, 0x01, 0x00, 0xa1]);
-const Relay2On = Buffer.from([0xa0, 0x02, 0x01, 0xa3]);
-const Relay2Off = Buffer.from([0xa0, 0x02, 0x00, 0xa2]);
-
-let bleManager: BleManager | undefined;
+import {listeningCompass} from '../service/compass';
+import {connectingRelay} from '../service/relay';
+import {stopTurning, turningLeft, turningRight} from '../service/rudder';
 
 const NavScreen = () => {
   const dispatch = useDispatch();
@@ -44,78 +38,19 @@ const NavScreen = () => {
   const {deviceId, isConnecting, isDiscovering, isReady, isScanning} =
     useSelector(state => state.relay);
 
-  const write = async (command: Buffer) => {
-    console.log(!!bleManager, deviceId);
-    if (bleManager && deviceId) {
-      console.log(`write ${command.toString('hex')}`);
-      await bleManager.writeCharacteristicWithoutResponseForDevice(
-        deviceId,
-        '0000ffe0-0000-1000-8000-00805f9b34fb',
-        '0000ffe1-0000-1000-8000-00805f9b34fb',
-        command.toString('base64'),
-      );
-    }
-  };
-
-  const onLeft = async () => {
-    dispatch(rudder.actions.motor('Left'));
-    await write(Relay1On);
-    await write(Relay2Off);
-  };
-  const onHold = async () => {
-    dispatch(rudder.actions.motor('Hold'));
-    await write(Relay1Off);
-    await write(Relay2Off);
-  };
-  const onRight = async () => {
-    dispatch(rudder.actions.motor('Right'));
-    await write(Relay1Off);
-    await write(Relay2On);
-  };
-
   useEffect(() => {
-    const degree_update_rate = 1;
-
-    // accuracy on android will be hardcoded to 1
-    // since the value is not available.
-    // For iOS, it is in degrees
-    CompassHeading.start(degree_update_rate, ({heading, accuracy}) => {
-      dispatch(compass.actions.heading(heading));
-    });
-
-    return () => {
-      CompassHeading.stop();
-    };
+    dispatch(listeningCompass());
   }, []);
 
   useEffect(() => {
     if (!(isScanning || isConnecting || isDiscovering || isReady)) {
-      PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      ).then(permissionResult => {
-        if (permissionResult === PermissionsAndroid.RESULTS.GRANTED) {
-          bleManager = new BleManager();
-          dispatch(relay.actions.scanning());
-          bleManager.startDeviceScan(null, null, (error, device) => {
-            if (bleManager && device && device.localName === 'DSD Relay') {
-              bleManager.stopDeviceScan();
-              dispatch(relay.actions.connecting());
-              bleManager.connectToDevice(device.id).then(() => {
-                if (bleManager) {
-                  dispatch(relay.actions.discovering());
-                  bleManager
-                    .discoverAllServicesAndCharacteristicsForDevice(device.id)
-                    .then(() => {
-                      dispatch(relay.actions.ready({deviceId: device.id}));
-                    });
-                }
-              });
-            }
-          });
-        }
-      });
+      dispatch(connectingRelay());
     }
   }, [isConnecting, isDiscovering, isReady, isScanning]);
+
+  const onLeft = () => dispatch(turningLeft());
+  const onHold = () => dispatch(stopTurning());
+  const onRight = () => dispatch(turningRight());
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,

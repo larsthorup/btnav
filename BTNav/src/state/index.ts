@@ -1,6 +1,7 @@
 import * as Redux from 'redux';
 import * as ReduxThunk from 'redux-thunk';
 import * as ReactRedux from 'react-redux';
+import * as ReduxSaga from '../lib/redux-saga';
 
 import compass from './compass';
 import relay from './relay';
@@ -14,7 +15,7 @@ export const rootReducer = Redux.combineReducers({
 
 export type RootState = ReturnType<typeof rootReducer>;
 export type Selector<T> = (state: RootState) => T;
-// export type Saga<TArg = void> = ReduxSaga.Saga<RootState, TArg, void>;
+export type Saga<TArg = void> = ReduxSaga.Saga<RootState, TArg, void>;
 export type Dispatch = ReduxThunk.ThunkDispatch<
   RootState,
   unknown,
