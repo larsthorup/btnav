@@ -8,9 +8,10 @@
  * @format
  */
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   Button,
+  Dimensions,
   Image,
   PermissionsAndroid,
   SafeAreaView,
@@ -21,6 +22,8 @@ import {
   View,
 } from 'react-native';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
+
+import SwitchSelector from 'react-native-switch-selector';
 
 import {useDispatch, useSelector} from '../state';
 import relay from '../state/relay';
@@ -33,10 +36,14 @@ import {stopTurning, turningLeft, turningRight} from '../service/rudder';
 const NavScreen = () => {
   const dispatch = useDispatch();
   const isDarkMode = false; // useColorScheme() === 'dark';
+  const [isManual, setIsManual] = useState(true);
+  const [targetHeading, setTargetHeading] = useState(0);
   const heading = useSelector(state => state.compass.heading);
   const motorDirection = useSelector(state => state.rudder.motorDirection);
   const {deviceId, isConnecting, isDiscovering, isReady, isScanning} =
     useSelector(state => state.relay);
+  const windowWidth = Dimensions.get('window').width;
+  const [motorSwitchValue, setMotorSwitchValue] = useState(1);
 
   useEffect(() => {
     dispatch(listeningCompass());
@@ -48,9 +55,42 @@ const NavScreen = () => {
     }
   }, [isConnecting, isDiscovering, isReady, isScanning]);
 
-  const onLeft = () => dispatch(turningLeft());
-  const onHold = () => dispatch(stopTurning());
-  const onRight = () => dispatch(turningRight());
+  const onLeft = () => {
+    dispatch(turningLeft());
+    setMotorSwitchValue(0);
+  };
+  const onHold = () => {
+    dispatch(stopTurning());
+    setMotorSwitchValue(1);
+  };
+  const onRight = () => {
+    dispatch(turningRight());
+    setMotorSwitchValue(2);
+  };
+  const onPress = () => {
+    setIsManual(isManual => !isManual);
+    setTargetHeading(heading);
+  };
+
+  const motorSwitchOptions = [
+    {label: 'Bagbord', value: 'Left'},
+    {label: 'Uændret', value: 'Hold'},
+    {label: 'Styrbord', value: 'Right'},
+  ];
+
+  const onMotorSwitchPress = value => {
+    switch (value) {
+      case 'Left':
+        onLeft();
+        break;
+      case 'Hold':
+        onHold();
+        break;
+      case 'Right':
+        onRight();
+        break;
+    }
+  };
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -88,17 +128,43 @@ const NavScreen = () => {
                 color: isDarkMode ? Colors.light : Colors.dark,
               },
             ]}>
-            {`Aktuel kurs: ${heading}°`}
-          </Text>
-          <Text
-            style={[
-              styles.sectionDescription,
-              {
-                color: isDarkMode ? Colors.light : Colors.dark,
-              },
-            ]}>
             {`Relæ: ${relayStatus}`}
           </Text>
+          <SwitchSelector
+            options={motorSwitchOptions}
+            initial={motorSwitchValue}
+            value={motorSwitchValue}
+            onPress={onMotorSwitchPress}
+          />
+          {/* <View style={{flexDirection: 'row', justifyContent: 'center'}}>
+            <Switch
+              disabled={!isManual}
+              value={motorDirection === 'Left'}
+              onChange={onLeft}
+            />
+            <Switch
+              disabled={!isManual}
+              value={motorDirection === 'Hold'}
+              onChange={onHold}
+            />
+            <Switch
+              disabled={!isManual}
+              value={motorDirection === 'Right'}
+              onChange={onRight}
+            />
+          </View> */}
+          <Button title={isManual ? 'Hold kurs' : 'Manuel'} onPress={onPress} />
+          {!isManual && (
+            <Text
+              style={[
+                styles.sectionDescription,
+                {
+                  color: isDarkMode ? Colors.light : Colors.dark,
+                },
+              ]}>
+              {`Ønsket kurs: ${targetHeading}°`}
+            </Text>
+          )}
           <Text
             style={[
               styles.sectionDescription,
@@ -106,22 +172,22 @@ const NavScreen = () => {
                 color: isDarkMode ? Colors.light : Colors.dark,
               },
             ]}>
-            Manuel: Bagbord | Hold | Styrbord
+            {`Aktuel kurs: ${heading}°`}
           </Text>
-          <Switch value={motorDirection === 'Left'} onChange={onLeft} />
-          <Switch value={motorDirection === 'Hold'} onChange={onHold} />
-          <Switch value={motorDirection === 'Right'} onChange={onRight} />
+        </View>
+        <View style={{height: windowWidth}}>
+          <Image
+            style={[
+              {zIndex: -1},
+              backgroundStyle,
+              styles.compass,
+              {transform: [{rotate: `${360 - heading}deg`}]},
+            ]}
+            resizeMode="contain"
+            source={require('../media/compass.png')}
+          />
         </View>
       </SafeAreaView>
-      <Image
-        style={[
-          backgroundStyle,
-          styles.compass,
-          {transform: [{rotate: `${360 - heading}deg`}]},
-        ]}
-        resizeMode="contain"
-        source={require('../media/compass.png')}
-      />
     </>
   );
 };
@@ -137,7 +203,7 @@ const styles = StyleSheet.create({
   },
   sectionDescription: {
     marginTop: 8,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '400',
   },
   compass: {
