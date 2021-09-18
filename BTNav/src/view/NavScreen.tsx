@@ -57,7 +57,7 @@ const NavScreen = () => {
   const targetHeading = useSelector(state => state.navigation.targetHeading);
   const heading = useSelector(state => state.compass.heading);
   const motorDirection = useSelector(state => state.rudder.motorDirection);
-  const {deviceId, isConnecting, isDiscovering, isReady, isScanning} =
+  const {deviceId, isConnecting, isDiscovering, isOnline, isReady, isScanning} =
     useSelector(state => state.relay);
   const windowWidth = Dimensions.get('window').width;
   const rudderMotorSwitchValue =
@@ -124,7 +124,9 @@ const NavScreen = () => {
     ? '...forbinder...'
     : isDiscovering
     ? '...kontrollerer...'
-    : '';
+    : isOnline
+    ? '...bluetooth...'
+    : 'Bluetooth er slået fra';
 
   return (
     <>

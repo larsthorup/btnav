@@ -1,7 +1,7 @@
 import {createSlice, SliceReducer} from '../lib/redux-slice';
 
 export type RelayState = Readonly<{
-  isPowered: boolean;
+  isOnline: boolean;
   isScanning: boolean;
   isConnecting: boolean;
   isDiscovering: boolean;
@@ -15,7 +15,7 @@ const initialState: RelayState = {
   deviceId: null,
   isConnecting: false,
   isDiscovering: false,
-  isPowered: false,
+  isOnline: false,
   isReady: false,
   isScanning: false,
 };
@@ -24,7 +24,7 @@ const connecting: RelayReducer<void> = state => ({
   ...state,
   isConnecting: true,
   isDiscovering: false,
-  isPowered: true,
+  isOnline: true,
   isReady: false,
   isScanning: false,
 });
@@ -33,7 +33,16 @@ const discovering: RelayReducer<void> = state => ({
   ...state,
   isConnecting: false,
   isDiscovering: true,
-  isPowered: true,
+  isOnline: true,
+  isReady: false,
+  isScanning: false,
+});
+
+const online: RelayReducer<boolean> = (state, isOnline) => ({
+  ...state,
+  isConnecting: false,
+  isDiscovering: false,
+  isOnline,
   isReady: false,
   isScanning: false,
 });
@@ -43,7 +52,7 @@ const ready: RelayReducer<{deviceId: string}> = (state, {deviceId}) => ({
   deviceId,
   isConnecting: false,
   isDiscovering: false,
-  isPowered: true,
+  isOnline: true,
   isReady: true,
   isScanning: false,
 });
@@ -52,7 +61,7 @@ const scanning: RelayReducer<void> = state => ({
   ...state,
   isConnecting: false,
   isDiscovering: false,
-  isPowered: true,
+  isOnline: true,
   isReady: false,
   isScanning: true,
 });
@@ -63,6 +72,7 @@ export default createSlice({
   reducers: {
     connecting,
     discovering,
+    online,
     ready,
     scanning,
   },

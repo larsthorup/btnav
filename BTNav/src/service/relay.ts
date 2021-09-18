@@ -1,7 +1,7 @@
 import {Buffer} from 'buffer';
 
 import {PermissionsAndroid} from 'react-native';
-import {BleManager} from 'react-native-ble-plx';
+import {BleManager, State} from 'react-native-ble-plx';
 
 import {Dispatch, RootState, Saga} from '../state';
 import relay from '../state/relay';
@@ -47,28 +47,29 @@ export const stopAllMotors: Saga<void> = () => async (dispatch: Dispatch) => {
 };
 
 export const connectingRelay: Saga<void> = () => async (dispatch: Dispatch) => {
-  PermissionsAndroid.request(
+  const permissionResult = await PermissionsAndroid.request(
     PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-  ).then(permissionResult => {
-    if (permissionResult === PermissionsAndroid.RESULTS.GRANTED) {
-      bleManager = new BleManager();
+  );
+  if (permissionResult === PermissionsAndroid.RESULTS.GRANTED) {
+    bleManager = new BleManager();
+    const state = await bleManager.state();
+    if (state === State.PoweredOn) {
+      dispatch(relay.actions.online(true));
       dispatch(relay.actions.scanning());
-      bleManager.startDeviceScan(null, null, (error, device) => {
+      bleManager.startDeviceScan(null, null, async (error, device) => {
         if (bleManager && device && device.localName === 'DSD Relay') {
           bleManager.stopDeviceScan();
           dispatch(relay.actions.connecting());
-          bleManager.connectToDevice(device.id).then(() => {
-            if (bleManager) {
-              dispatch(relay.actions.discovering());
-              bleManager
-                .discoverAllServicesAndCharacteristicsForDevice(device.id)
-                .then(() => {
-                  dispatch(relay.actions.ready({deviceId: device.id}));
-                });
-            }
-          });
+          await bleManager.connectToDevice(device.id);
+          dispatch(relay.actions.discovering());
+          await bleManager.discoverAllServicesAndCharacteristicsForDevice(
+            device.id,
+          );
+          dispatch(relay.actions.ready({deviceId: device.id}));
         }
       });
+    } else {
+      dispatch(relay.actions.online(false));
     }
-  });
+  }
 };
