@@ -14,6 +14,7 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {
+    "@logrocket/react-native": "^0.14.1",
     "@types/ramda": "^0.27.44",
     "buffer": "^6.0.3",
     "ramda": "^0.27.1",
