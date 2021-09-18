@@ -4,11 +4,13 @@ import * as ReactRedux from 'react-redux';
 import * as ReduxSaga from '../lib/redux-saga';
 
 import compass from './compass';
+import navigation from './navigation';
 import relay from './relay';
 import rudder from './rudder';
 
 export const rootReducer = Redux.combineReducers({
   compass: compass.reducer,
+  navigation: navigation.reducer,
   relay: relay.reducer,
   rudder: rudder.reducer,
 });

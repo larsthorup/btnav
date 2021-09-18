@@ -27,26 +27,48 @@ import SwitchSelector from 'react-native-switch-selector';
 
 import {useDispatch, useSelector} from '../state';
 import relay from '../state/relay';
-import rudder from '../state/rudder';
+import rudder, {MotorDirection} from '../state/rudder';
 import compass from '../state/compass';
 import {listeningCompass} from '../service/compass';
 import {connectingRelay} from '../service/relay';
 import {stopTurning, turningLeft, turningRight} from '../service/rudder';
+import navigation from '../state/navigation';
+import {navigating} from '../service/navigation';
+
+type RudderMotorSwitchOption = {
+  label: string;
+  value: MotorDirection;
+};
+
+const rudderMotorSwitchOptions: RudderMotorSwitchOption[] = [
+  {label: 'Bagbord', value: 'Left'},
+  {label: 'Uændret', value: 'Hold'},
+  {label: 'Styrbord', value: 'Right'},
+];
+
+const rudderMotorSwitchValueFromDirection = (direction: MotorDirection) => {
+  return rudderMotorSwitchOptions.findIndex(o => o.value === direction);
+};
 
 const NavScreen = () => {
   const dispatch = useDispatch();
   const isDarkMode = false; // useColorScheme() === 'dark';
-  const [isManual, setIsManual] = useState(true);
-  const [targetHeading, setTargetHeading] = useState(0);
+  const isNavigationEnabled = useSelector(state => state.navigation.isEnabled);
+  const targetHeading = useSelector(state => state.navigation.targetHeading);
   const heading = useSelector(state => state.compass.heading);
   const motorDirection = useSelector(state => state.rudder.motorDirection);
   const {deviceId, isConnecting, isDiscovering, isReady, isScanning} =
     useSelector(state => state.relay);
   const windowWidth = Dimensions.get('window').width;
-  const [motorSwitchValue, setMotorSwitchValue] = useState(1);
+  const rudderMotorSwitchValue =
+    rudderMotorSwitchValueFromDirection(motorDirection);
+  // const [rudderMotorSwitchValue, setRudderMotorSwitchValue] = useState(
+  //   rudderMotorSwitchValueFromDirection(motorDirection),
+  // );
 
   useEffect(() => {
     dispatch(listeningCompass());
+    dispatch(navigating());
   }, []);
 
   useEffect(() => {
@@ -57,28 +79,26 @@ const NavScreen = () => {
 
   const onLeft = () => {
     dispatch(turningLeft());
-    setMotorSwitchValue(0);
+    // setRudderMotorSwitchValue(rudderMotorSwitchValueFromDirection('Left'));
   };
   const onHold = () => {
     dispatch(stopTurning());
-    setMotorSwitchValue(1);
+    // setRudderMotorSwitchValue(rudderMotorSwitchValueFromDirection('Hold'));
   };
   const onRight = () => {
     dispatch(turningRight());
-    setMotorSwitchValue(2);
+    // setRudderMotorSwitchValue(rudderMotorSwitchValueFromDirection('Right'));
   };
-  const onPress = () => {
-    setIsManual(isManual => !isManual);
-    setTargetHeading(heading);
+  const onNavigationToggleAuto = () => {
+    dispatch(
+      navigation.actions.enable({
+        isEnabled: !isNavigationEnabled,
+        targetHeading: heading,
+      }),
+    );
   };
 
-  const motorSwitchOptions = [
-    {label: 'Bagbord', value: 'Left'},
-    {label: 'Uændret', value: 'Hold'},
-    {label: 'Styrbord', value: 'Right'},
-  ];
-
-  const onMotorSwitchPress = value => {
+  const onRudderMotorSwitchPress = (value: string) => {
     switch (value) {
       case 'Left':
         onLeft();
@@ -131,40 +151,43 @@ const NavScreen = () => {
             {`Relæ: ${relayStatus}`}
           </Text>
           <SwitchSelector
-            options={motorSwitchOptions}
-            initial={motorSwitchValue}
-            value={motorSwitchValue}
-            onPress={onMotorSwitchPress}
+            style={{margin: 10}}
+            disabled={isNavigationEnabled}
+            options={rudderMotorSwitchOptions}
+            initial={rudderMotorSwitchValue}
+            value={rudderMotorSwitchValue}
+            onPress={onRudderMotorSwitchPress}
           />
-          {/* <View style={{flexDirection: 'row', justifyContent: 'center'}}>
-            <Switch
-              disabled={!isManual}
-              value={motorDirection === 'Left'}
-              onChange={onLeft}
-            />
-            <Switch
-              disabled={!isManual}
-              value={motorDirection === 'Hold'}
-              onChange={onHold}
-            />
-            <Switch
-              disabled={!isManual}
-              value={motorDirection === 'Right'}
-              onChange={onRight}
-            />
-          </View> */}
-          <Button title={isManual ? 'Hold kurs' : 'Manuel'} onPress={onPress} />
-          {!isManual && (
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              margin: 10,
+            }}>
             <Text
               style={[
                 styles.sectionDescription,
                 {
                   color: isDarkMode ? Colors.light : Colors.dark,
+                  margin: 10,
                 },
               ]}>
-              {`Ønsket kurs: ${targetHeading}°`}
+              {isNavigationEnabled ? 'Styrer automatisk' : 'Du styrer'}
             </Text>
-          )}
+            <Button
+              title={isNavigationEnabled ? 'Styr selv' : 'Hold kurs'}
+              onPress={onNavigationToggleAuto}
+            />
+          </View>
+          <Text
+            style={[
+              styles.sectionDescription,
+              {
+                color: isDarkMode ? Colors.light : Colors.dark,
+              },
+            ]}>
+            {isNavigationEnabled ? `Ønsket kurs: ${targetHeading}°` : ''}
+          </Text>
           <Text
             style={[
               styles.sectionDescription,
