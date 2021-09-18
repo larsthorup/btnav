@@ -12,6 +12,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: "14"
-      - run: yarn install
-      - run: yarn tsc
-      - run: yarn eslint
+      - name: dependencies
+        run: cd BTNav && yarn install
+      - name: types
+        run: cd BTNav && yarn tsc
+      - name: linting
+        run: cd BTNav && yarn eslint
