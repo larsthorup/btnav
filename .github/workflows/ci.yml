@@ -18,3 +18,5 @@ jobs:
         run: cd BTNav && yarn tsc
       - name: linting
         run: cd BTNav && yarn eslint
+      - name: test
+        run: cd BTNav && yarn test
