@@ -11,12 +11,12 @@ let bleManager: BleManager | undefined;
 const Hm10UartServiceUuid = '0000ffe0-0000-1000-8000-00805f9b34fb';
 const Hm10UartCharacteristicUuid = '0000ffe1-0000-1000-8000-00805f9b34fb';
 
-export const Relay1On = Buffer.from([0xa0, 0x01, 0x01, 0xa2]);
-export const Relay1Off = Buffer.from([0xa0, 0x01, 0x00, 0xa1]);
-export const Relay2On = Buffer.from([0xa0, 0x02, 0x01, 0xa3]);
-export const Relay2Off = Buffer.from([0xa0, 0x02, 0x00, 0xa2]);
+const Relay1On = Buffer.from([0xa0, 0x01, 0x01, 0xa2]);
+const Relay1Off = Buffer.from([0xa0, 0x01, 0x00, 0xa1]);
+const Relay2On = Buffer.from([0xa0, 0x02, 0x01, 0xa3]);
+const Relay2Off = Buffer.from([0xa0, 0x02, 0x00, 0xa2]);
 
-export const writing: Saga<Buffer> =
+const writing: Saga<Buffer> =
   (command: Buffer) =>
   async (dispatch: Dispatch, getState: () => RootState) => {
     const {deviceId} = getState().relay;
@@ -30,6 +30,21 @@ export const writing: Saga<Buffer> =
       );
     }
   };
+
+export const startMotor1: Saga<void> = () => async (dispatch: Dispatch) => {
+  await dispatch(writing(Relay1On));
+  await dispatch(writing(Relay2Off));
+};
+
+export const startMotor2: Saga<void> = () => async (dispatch: Dispatch) => {
+  await dispatch(writing(Relay1Off));
+  await dispatch(writing(Relay2On));
+};
+
+export const stopAllMotors: Saga<void> = () => async (dispatch: Dispatch) => {
+  await dispatch(writing(Relay1Off));
+  await dispatch(writing(Relay2Off));
+};
 
 export const connectingRelay: Saga<void> = () => async (dispatch: Dispatch) => {
   PermissionsAndroid.request(

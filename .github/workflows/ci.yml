@@ -14,9 +14,5 @@ jobs:
           node-version: "14"
       - name: dependencies
         run: cd BTNav && yarn install
-      - name: types
-        run: cd BTNav && yarn tsc
-      - name: linting
-        run: cd BTNav && yarn eslint
       - name: test
         run: cd BTNav && yarn test

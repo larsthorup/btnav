@@ -1,21 +1,18 @@
 import {Dispatch, Saga} from '../state';
 import rudder from '../state/rudder';
-import {Relay1Off, Relay1On, Relay2Off, Relay2On, writing} from './relay';
+import {startMotor1, startMotor2, stopAllMotors} from './relay';
 
 export const turningLeft: Saga<void> = () => async (dispatch: Dispatch) => {
   dispatch(rudder.actions.motor('Left'));
-  await dispatch(writing(Relay1On));
-  await dispatch(writing(Relay2Off));
+  await dispatch(startMotor1());
 };
 
 export const stopTurning: Saga<void> = () => async (dispatch: Dispatch) => {
   dispatch(rudder.actions.motor('Hold'));
-  await dispatch(writing(Relay1Off));
-  await dispatch(writing(Relay2Off));
+  await dispatch(stopAllMotors());
 };
 
 export const turningRight: Saga<void> = () => async (dispatch: Dispatch) => {
   dispatch(rudder.actions.motor('Right'));
-  await dispatch(writing(Relay1Off));
-  await dispatch(writing(Relay2On));
+  await dispatch(startMotor2());
 };

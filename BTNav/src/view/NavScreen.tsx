@@ -157,6 +157,7 @@ const NavScreen = () => {
             initial={rudderMotorSwitchValue}
             value={rudderMotorSwitchValue}
             onPress={onRudderMotorSwitchPress}
+            disableValueChangeOnPress={true}
           />
           <View
             style={{

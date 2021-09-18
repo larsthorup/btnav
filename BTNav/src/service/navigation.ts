@@ -2,6 +2,7 @@ import CompassHeading from 'react-native-compass-heading';
 import {Dispatch, RootState, Saga} from '../state';
 import compass from '../state/compass';
 import rudder from '../state/rudder';
+import {stopTurning, turningLeft, turningRight} from './rudder';
 
 const degreesBetween = (heading: number, targetHeading: number) => {
   const degrees = targetHeading - heading;
@@ -14,29 +15,40 @@ const degreesBetween = (heading: number, targetHeading: number) => {
   }
 };
 
+export const adjustingCourse = async (
+  dispatch: Dispatch,
+  getState: () => RootState,
+  pause: (ms: number) => Promise<void>,
+) => {
+  const state = getState();
+  if (state.navigation.isEnabled) {
+    const headingDerivation = degreesBetween(
+      state.compass.heading,
+      state.navigation.targetHeading,
+    );
+    if (Math.abs(headingDerivation) > 5) {
+      console.log('navigating', {headingDerivation});
+      if (headingDerivation > 0) {
+        dispatch(turningRight());
+      } else {
+        dispatch(turningLeft());
+      }
+      await pause(1000);
+      dispatch(stopTurning());
+    }
+  }
+};
+
 export const navigating: Saga<void> =
   () => async (dispatch: Dispatch, getState: () => RootState) => {
-    const adjustCourse = async () => {
-      const state = getState();
-      if (state.navigation.isEnabled) {
-        const headingDerivation = degreesBetween(
-          state.compass.heading,
-          state.navigation.targetHeading,
-        );
-        if (Math.abs(headingDerivation) > 5) {
-          console.log('navigating', {headingDerivation});
-          if (headingDerivation > 0) {
-            dispatch(rudder.actions.motor('Right'));
-          } else {
-            dispatch(rudder.actions.motor('Left'));
-          }
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          dispatch(rudder.actions.motor('Hold'));
-        }
-      }
-      setTimeout(adjustCourse, 2000);
+    const pause = async (ms: number) => {
+      await new Promise(resolve => setTimeout(resolve, ms));
     };
-    adjustCourse();
+    const adjustingCourseForever = async () => {
+      await adjustingCourse(dispatch, getState, pause);
+      setTimeout(adjustingCourseForever, 2000);
+    };
+    adjustingCourseForever();
     return new Promise(() => {
       // Note: deliberately do not return
     });
