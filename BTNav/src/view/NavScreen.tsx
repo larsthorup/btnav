@@ -30,10 +30,10 @@ import relay from '../state/relay';
 import rudder, {MotorDirection} from '../state/rudder';
 import compass from '../state/compass';
 import {listeningCompass} from '../service/compass';
-import {connectingRelay} from '../service/relay';
 import {stopTurning, turningLeft, turningRight} from '../service/rudder';
 import navigation from '../state/navigation';
 import {navigating} from '../service/navigation';
+import RelayStatus from './RelayStatus';
 
 type RudderMotorSwitchOption = {
   label: string;
@@ -57,8 +57,6 @@ const NavScreen = () => {
   const targetHeading = useSelector(state => state.navigation.targetHeading);
   const heading = useSelector(state => state.compass.heading);
   const motorDirection = useSelector(state => state.rudder.motorDirection);
-  const {deviceId, isConnecting, isDiscovering, isOnline, isReady, isScanning} =
-    useSelector(state => state.relay);
   const windowWidth = Dimensions.get('window').width;
   const rudderMotorSwitchValue =
     rudderMotorSwitchValueFromDirection(motorDirection);
@@ -70,12 +68,6 @@ const NavScreen = () => {
     dispatch(listeningCompass());
     dispatch(navigating());
   }, []);
-
-  useEffect(() => {
-    if (!(isScanning || isConnecting || isDiscovering || isReady)) {
-      dispatch(connectingRelay());
-    }
-  }, [isConnecting, isDiscovering, isReady, isScanning]);
 
   const onLeft = () => {
     dispatch(turningLeft());
@@ -116,18 +108,6 @@ const NavScreen = () => {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
-  const relayStatus = isReady
-    ? 'Forbundet'
-    : isScanning
-    ? '...søger...'
-    : isConnecting
-    ? '...forbinder...'
-    : isDiscovering
-    ? '...kontrollerer...'
-    : isOnline
-    ? '...bluetooth...'
-    : 'Bluetooth er slået fra';
-
   return (
     <>
       <SafeAreaView style={backgroundStyle}>
@@ -143,15 +123,7 @@ const NavScreen = () => {
           </Text>
         </View>
         <View style={styles.sectionContainer}>
-          <Text
-            style={[
-              styles.sectionDescription,
-              {
-                color: isDarkMode ? Colors.light : Colors.dark,
-              },
-            ]}>
-            {`Relæ: ${relayStatus}`}
-          </Text>
+          <RelayStatus />
           <SwitchSelector
             style={{margin: 10}}
             disabled={isNavigationEnabled}

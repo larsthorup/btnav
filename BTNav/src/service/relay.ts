@@ -61,6 +61,9 @@ export const connectingRelay: Saga<void> = () => async (dispatch: Dispatch) => {
           bleManager.stopDeviceScan();
           dispatch(relay.actions.connecting());
           await bleManager.connectToDevice(device.id);
+          bleManager.onDeviceDisconnected(device.id, async (error, device) => {
+            dispatch(relay.actions.disconnected());
+          });
           dispatch(relay.actions.discovering());
           await bleManager.discoverAllServicesAndCharacteristicsForDevice(
             device.id,
