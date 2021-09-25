@@ -13,6 +13,8 @@ yarn android:build
 yarn android:install
 ```
 
+Installable app can be found in BTNav/android/app/build/outputs/apk/debug/app-debug.apk
+
 ## Telemetry
 
 https://app.logrocket.com/h5ovjy/btnav-dev

@@ -24,6 +24,7 @@ import {
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
 import SwitchSelector from 'react-native-switch-selector';
+import InputSpinner from 'react-native-input-spinner';
 
 import {useDispatch, useSelector} from '../state';
 import relay from '../state/relay';
@@ -55,14 +56,17 @@ const NavScreen = () => {
   const isDarkMode = false; // useColorScheme() === 'dark';
   const isNavigationEnabled = useSelector(state => state.navigation.isEnabled);
   const targetHeading = useSelector(state => state.navigation.targetHeading);
+  const adjustCourseDelaySeconds = useSelector(
+    state => state.navigation.adjustCourseDelaySeconds,
+  );
+  const adjustTimeSeconds = useSelector(
+    state => state.navigation.adjustTimeSeconds,
+  );
   const heading = useSelector(state => state.compass.heading);
   const motorDirection = useSelector(state => state.rudder.motorDirection);
   const windowWidth = Dimensions.get('window').width;
   const rudderMotorSwitchValue =
     rudderMotorSwitchValueFromDirection(motorDirection);
-  // const [rudderMotorSwitchValue, setRudderMotorSwitchValue] = useState(
-  //   rudderMotorSwitchValueFromDirection(motorDirection),
-  // );
 
   useEffect(() => {
     dispatch(listeningCompass());
@@ -71,15 +75,12 @@ const NavScreen = () => {
 
   const onLeft = () => {
     dispatch(turningLeft());
-    // setRudderMotorSwitchValue(rudderMotorSwitchValueFromDirection('Left'));
   };
   const onHold = () => {
     dispatch(stopTurning());
-    // setRudderMotorSwitchValue(rudderMotorSwitchValueFromDirection('Hold'));
   };
   const onRight = () => {
     dispatch(turningRight());
-    // setRudderMotorSwitchValue(rudderMotorSwitchValueFromDirection('Right'));
   };
   const onNavigationToggleAuto = () => {
     dispatch(
@@ -124,6 +125,60 @@ const NavScreen = () => {
         </View>
         <View style={styles.sectionContainer}>
           <RelayStatus />
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              margin: 10,
+            }}>
+            <Text
+              style={[
+                styles.sectionDescription,
+                {
+                  color: isDarkMode ? Colors.light : Colors.dark,
+                  margin: 10,
+                },
+              ]}>
+              Vent
+            </Text>
+            <InputSpinner
+              min={1}
+              step={1}
+              colorLeft="lightgrey"
+              colorRight="darkgrey"
+              value={adjustCourseDelaySeconds}
+              onChange={(value: number) =>
+                dispatch(navigation.actions.adjustCourseDelaySeconds(value))
+              }
+            />
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              margin: 10,
+            }}>
+            <Text
+              style={[
+                styles.sectionDescription,
+                {
+                  color: isDarkMode ? Colors.light : Colors.dark,
+                  margin: 10,
+                },
+              ]}>
+              Træk
+            </Text>
+            <InputSpinner
+              min={1}
+              step={1}
+              colorLeft="lightblue"
+              colorRight="darkblue"
+              value={adjustTimeSeconds}
+              onChange={(value: number) =>
+                dispatch(navigation.actions.adjustTimeSeconds(value))
+              }
+            />
+          </View>
           <SwitchSelector
             style={{margin: 10}}
             disabled={isNavigationEnabled}

@@ -5980,6 +5980,13 @@ react-native-compass-heading@^1.2.1:
   resolved "https://registry.yarnpkg.com/react-native-compass-heading/-/react-native-compass-heading-1.2.1.tgz#911bc6096f58be8ef9e48f9f59c56bd9b78d03e6"
   integrity sha512-Xvzb43w0A1FyA7PEOgowwUX1Jy+5dmQ7K/+L/NKGPlgwR6ttbWFgIlzZg7VfR0awmbpjVmO79m9tkPOPZGIdNg==
 
+react-native-input-spinner@^1.7.11:
+  version "1.7.11"
+  resolved "https://registry.yarnpkg.com/react-native-input-spinner/-/react-native-input-spinner-1.7.11.tgz#8ff37829139b9ce917139542cf2e2e58f8fd1085"
+  integrity sha512-GAZ3UkRIHI2Uc88FsRdbbcixEnW1itxHbeS3ePntZQKWEUVllVWPtgIswDAD7n4I4giZYiWkIvxqGLKEFL5XbA==
+  dependencies:
+    prop-types "^15.7.2"
+
 react-native-switch-selector@^2.1.4:
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/react-native-switch-selector/-/react-native-switch-selector-2.1.4.tgz#be65e5a956f8ba537540f76b2dc14e9d0e2d53a2"

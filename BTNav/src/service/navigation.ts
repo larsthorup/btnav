@@ -33,7 +33,7 @@ export const adjustingCourse = async (
       } else {
         dispatch(turningLeft());
       }
-      await pause(1000);
+      await pause(state.navigation.adjustTimeSeconds * 1000);
       dispatch(stopTurning());
     }
   }
@@ -46,7 +46,8 @@ export const navigating: Saga<void> =
     };
     const adjustingCourseForever = async () => {
       await adjustingCourse(dispatch, getState, pause);
-      setTimeout(adjustingCourseForever, 2000);
+      const {adjustCourseDelaySeconds} = getState().navigation;
+      setTimeout(adjustingCourseForever, adjustCourseDelaySeconds * 1000);
     };
     adjustingCourseForever();
     return new Promise(() => {
