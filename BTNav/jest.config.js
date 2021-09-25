@@ -15,6 +15,7 @@ const config = {
       '@react-native',
       'react-native-ble-plx',
       'react-native-compass-heading',
+      'react-native-input-spinner',
       'react-native-switch-selector',
     ].join('|')})/)`
   ]
