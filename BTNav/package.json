@@ -8,6 +8,7 @@
     "android:build": "tsc && npm run android:bundle && npm run android:assemble",
     "android:bundle": "bash -c \"mkdir -p android/app/src/main/assets\"  && react-native bundle --reset-cache --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res/",
     "android:install": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk",
+    "android:release": "cd android && bash ./gradlew clean && bash ./gradlew bundleRelease",
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "tsc && eslint && jest",

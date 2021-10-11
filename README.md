@@ -13,7 +13,27 @@ yarn android:build
 yarn android:install
 ```
 
-Installable app can be found in BTNav/android/app/build/outputs/apk/debug/app-debug.apk
+Installable app can be found in android/app/build/outputs/apk/debug/app-debug.apk
+
+## Publish
+
+Copy btnav.keystore into `android/app`
+
+credentials in `~/.gradle/gradle.properties`:
+
+```ini
+BTNAV_STORE_FILE=btnav.keystore
+BTNAV_KEY_ALIAS=btnav
+BTNAV_STORE_PASSWORD=*****
+BTNAV_KEY_PASSWORD=*****
+```
+
+```bash
+cd BTNav
+yarn android:release
+```
+
+Uploadable app bundle can be found in android/app/build/outputs/bundle/release/app-release.abb
 
 ## Telemetry
 
